@@ -1,0 +1,4 @@
+watchdog>=3.0.0
+ocrmypdf>=15.0.0
+Pillow>=10.0.0
+rumps>=0.4.0
