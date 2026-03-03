@@ -4,16 +4,22 @@ Automatically monitors folders for new PDF files and runs OCR on them, replacing
 
 ## Features
 
-- **macOS Menu Bar App** - Beautiful menu bar interface with easy controls
-- Monitor multiple folders for new PDF files
-- Automatically run OCR on new PDFs when they appear
-- Replace original files with OCR-enabled versions
-- Track processed files to avoid reprocessing
+- **macOS Menu Bar App** - Native macOS Sequoia-compatible menu bar interface
+- **Automatic Monitoring** - Monitor multiple folders for new PDF files
+- **One-Time Processing** - Process existing files on demand:
+  - Manual file selection dialog
+  - Process all files in monitored folders
+  - Process recent files (<1 day old)
+- **Automatic OCR** - Automatically run OCR on new PDFs when they appear
+- **File Replacement** - Replace original files with OCR-enabled versions
+- **Smart Tracking** - Track processed files to avoid reprocessing
 - **On/Off Toggle** - Start and stop monitoring with one click
 - **Pause/Resume** - Temporarily pause processing without stopping the monitor
 - **Folder Management** - Quick access to up to 4 folders in the menu, with full management window
 - **Statistics** - Track total processed files and errors
-- Easy CLI tool to manage monitored folders (alternative to GUI)
+- **CLI Tool** - Easy command-line tool to manage monitored folders (alternative to GUI)
+
+**Quick start on this machine:** see [RUN.md](RUN.md) for one-time setup and run commands.
 
 ## Installation
 
@@ -44,6 +50,10 @@ The menu bar app provides a user-friendly interface to manage PDF monitoring:
    - **Monitor ON/OFF** - Toggle monitoring on or off
    - **Folders** - Quick access to your monitored folders (shows up to 4, click to open in Finder)
      - If you have 4 or more folders, the 5th option "Manage All Folders..." opens the full preferences window
+   - **Process Files...** (NEW) - One-time OCR processing options:
+     - **Select Files...** - Choose specific PDF files to process with OCR
+     - **Process All in Folders** - Process all PDFs in monitored folders
+     - **Process Recent (<1 day)** - Process PDFs modified in last 24 hours
    - **Pause/Resume** - Temporarily pause processing (monitor stays running)
    - **Statistics** - View total processed files and errors
    - **Preferences...** - Full folder management window where you can:

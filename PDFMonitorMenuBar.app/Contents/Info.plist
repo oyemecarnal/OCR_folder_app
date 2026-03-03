@@ -3,11 +3,11 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleExecutable</key>
-    <string>run.sh</string>
+    <string>PDFMonitorMenuBar</string>
     <key>CFBundleIdentifier</key>
-    <string>com.pdfmonitor.app</string>
+    <string>com.pdfmonitor.menubar</string>
     <key>CFBundleName</key>
-    <string>PDF Monitor</string>
+    <string>PDFMonitorMenuBar</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleVersion</key>
@@ -18,7 +18,5 @@
     <true/>
     <key>NSHighResolutionCapable</key>
     <true/>
-    <key>NSPrincipalClass</key>
-    <string>NSApplication</string>
 </dict>
 </plist>

@@ -1,0 +1,19 @@
+#!/bin/bash
+# PDF Monitor Stop - Stops all PDF Monitor processes
+
+# Stop web interface
+pkill -f "pdf_monitor_web.py"
+
+# Stop menu bar app if running
+pkill -f "pdf_monitor_app.py"
+
+# Stop background monitor
+pkill -f "pdf_monitor.py"
+
+# Show notification
+if pgrep -f "pdf_monitor" > /dev/null; then
+    osascript -e 'display notification "Some processes may still be running." with title "PDF Monitor"'
+else
+    osascript -e 'display notification "PDF Monitor stopped successfully." with title "PDF Monitor"'
+fi
+

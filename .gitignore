@@ -15,8 +15,11 @@ processed_pdfs.txt
 monitored_folders.json
 monitor_stats.json
 app_output.log
+app_error.log
 *.ocr_temp
 *.processing
+.ocr_control.json
+CONNECTION_INFO.txt
 
 # macOS
 .DS_Store

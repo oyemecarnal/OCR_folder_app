@@ -6,20 +6,26 @@ import os
 import sys
 import json
 import threading
+import time
 from typing import List, Optional
 
 # Hide dock icon - must be done before importing rumps
 # This ensures the app runs as a menu bar-only app (no dock icon)
 try:
     import AppKit
+    # Set LSUIElement to hide dock icon but show menu bar
     bundle = AppKit.NSBundle.mainBundle()
     if bundle:
         info = bundle.infoDictionary()
         if info:
             info['LSUIElement'] = True
-            # Also set background mode for macOS 15+
             info['LSBackgroundOnly'] = False  # We want menu bar, not pure background
-except:
+    # Also set it on the application directly
+    app = AppKit.NSApplication.sharedApplication()
+    if app:
+        app.setActivationPolicy_(AppKit.NSApplicationActivationPolicyAccessory)
+except Exception as e:
+    print(f"Warning: Could not set AppKit properties: {e}")
     pass  # If AppKit not available, continue anyway
 
 # Note: Output redirection is handled by the launcher script
@@ -90,7 +96,14 @@ class PDFMonitorApp(rumps.App):
     
     def __init__(self):
         try:
-            super(PDFMonitorApp, self).__init__(APP_NAME, icon=None, title="📄 PDF")
+            # Initialize rumps app
+            # When icon=None, rumps displays the name/title as text in menu bar
+            # Use a short, visible name with emoji for better visibility
+            super(PDFMonitorApp, self).__init__("📄 PDF Monitor", icon=None)
+            # Set title property explicitly to ensure it shows
+            self.title = "📄 PDF Monitor"
+            logger.info(f"Menu bar app initialized with title: '{self.title}'")
+            print(f"✓ Menu bar app initialized - Look for '{self.title}' in menu bar")
         except Exception as e:
             logger.error(f"Error initializing rumps app: {e}", exc_info=True)
             raise
@@ -115,7 +128,7 @@ class PDFMonitorApp(rumps.App):
             
             # Add default folder if needed
             if not self.monitor.config_manager.list_folders():
-                default_folder = '/Users/kevinreed/Downloads'
+                default_folder = os.path.expanduser('~/Downloads')
                 if os.path.isdir(default_folder):
                     self.monitor.config_manager.add_folder(default_folder)
             
@@ -126,20 +139,25 @@ class PDFMonitorApp(rumps.App):
             self.update_menu_timer = rumps.Timer(self.update_menu, 1)  # Update every second for progress
             self.update_menu_timer.start()
             
-            # Initial title update
+            # Initial title update (after menu is set up)
             self.update_title()
             
             # Initial folder menu build
             self.rebuild_folder_menu()
             
             logger.info("PDF Monitor app initialized successfully")
+            print(f"✓ App fully initialized - Menu bar title: '{self.title}'")
+            print(f"✓ If you don't see '{self.title}' in menu bar:")
+            print(f"  1. Check the overflow area (>> icon on far right)")
+            print(f"  2. Try: killall SystemUIServer")
+            print(f"  3. Check menu bar space - it may be hidden if menu bar is full")
             
             # Show notification that app is running
             try:
                 rumps.notification(
                     APP_NAME, 
                     "PDF Monitor is running", 
-                    "Click the menu bar icon to access controls"
+                    f"Look for '{self.title}' in menu bar (top right)"
                 )
             except:
                 pass
@@ -179,6 +197,11 @@ class PDFMonitorApp(rumps.App):
                 rumps.MenuItem("Monitor ON", callback=self.toggle_monitor),
                 rumps.separator,
                 rumps.MenuItem("Folders", callback=None),
+                rumps.separator,
+                rumps.MenuItem("Process Files...", callback=None),
+                rumps.MenuItem("  Select Files...", callback=self.select_files_for_ocr),
+                rumps.MenuItem("  Process All in Folders", callback=self.process_all_files),
+                rumps.MenuItem("  Process Recent (<1 day)", callback=self.process_recent_files),
                 rumps.separator,
                 rumps.MenuItem("Pause", callback=self.toggle_pause),
                 rumps.MenuItem("Statistics", callback=self.show_stats),
@@ -234,16 +257,16 @@ class PDFMonitorApp(rumps.App):
                 # Show progress: files remaining
                 remaining = len(handler_queue)
                 if remaining > 0:
-                    self.title = f"PDF Monitor ({remaining + 1} files)"
+                    self.title = f"📄 PDF Monitor ({remaining + 1} files)"
                 else:
-                    self.title = "PDF Monitor (Processing...)"
+                    self.title = "📄 PDF Monitor (Processing...)"
             else:
-                self.title = f"PDF Monitor ({len(handler_queue)} queued)"
+                self.title = f"📄 PDF Monitor ({len(handler_queue)} queued)"
         else:
             if self.monitor.running and not self.is_paused:
-                self.title = "PDF Monitor"
+                self.title = "📄 PDF Monitor"
             else:
-                self.title = "PDF Monitor (OFF)"
+                self.title = "📄 PDF Monitor (OFF)"
     
     def update_menu(self, _):
         """Update menu with current folders and status"""
@@ -531,6 +554,144 @@ Status: {'Running' if (self.monitor.running and not self.is_paused) else 'Stoppe
         except Exception as e:
             logger.error(f"Error showing preferences: {e}")
             rumps.alert("Error", f"Failed to open preferences: {e}", "OK")
+    
+    def select_files_for_ocr(self, sender):
+        """Open file selection dialog to choose PDFs for OCR"""
+        import tkinter as tk
+        from tkinter import filedialog
+        
+        def select_and_process():
+            root = tk.Tk()
+            root.withdraw()  # Hide main window
+            root.lift()
+            root.attributes('-topmost', True)
+            
+            files = filedialog.askopenfilenames(
+                title="Select PDF files to process with OCR",
+                filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")]
+            )
+            root.destroy()
+            
+            if files:
+                self.process_files_list(list(files))
+        
+        threading.Thread(target=select_and_process, daemon=True).start()
+    
+    def process_all_files(self, sender):
+        """Process all PDF files in monitored folders"""
+        folders = self.monitor.config_manager.list_folders()
+        if not folders:
+            rumps.alert("No Folders", "Please add folders in Preferences first.", "OK")
+            return
+        
+        if rumps.alert(
+            "Process All Files?",
+            f"This will process all PDF files in {len(folders)} monitored folder(s).\n\nThis may take a while. Continue?",
+            "Process All",
+            "Cancel"
+        ) == 1:  # Process All button
+            threading.Thread(target=self._process_all_files_thread, daemon=True).start()
+    
+    def process_recent_files(self, sender):
+        """Process PDF files modified in the last 24 hours"""
+        folders = self.monitor.config_manager.list_folders()
+        if not folders:
+            rumps.alert("No Folders", "Please add folders in Preferences first.", "OK")
+            return
+        
+        if rumps.alert(
+            "Process Recent Files?",
+            f"This will process PDF files modified in the last 24 hours in {len(folders)} monitored folder(s).\n\nContinue?",
+            "Process Recent",
+            "Cancel"
+        ) == 1:  # Process Recent button
+            threading.Thread(target=self._process_recent_files_thread, daemon=True).start()
+    
+    def _process_all_files_thread(self):
+        """Thread to process all files"""
+        folders = self.monitor.config_manager.list_folders()
+        all_files = []
+        
+        for folder in folders:
+            if os.path.isdir(folder):
+                for root, dirs, files in os.walk(folder):
+                    for file in files:
+                        if file.lower().endswith('.pdf'):
+                            filepath = os.path.join(root, file)
+                            all_files.append(filepath)
+        
+        if all_files:
+            rumps.notification(APP_NAME, "Processing Started", f"Found {len(all_files)} PDF file(s) to process")
+            self.process_files_list(all_files)
+        else:
+            rumps.notification(APP_NAME, "No Files Found", "No PDF files found in monitored folders")
+    
+    def _process_recent_files_thread(self):
+        """Thread to process recent files"""
+        folders = self.monitor.config_manager.list_folders()
+        cutoff_time = time.time() - (24 * 60 * 60)  # 24 hours ago
+        recent_files = []
+        
+        for folder in folders:
+            if os.path.isdir(folder):
+                for root, dirs, files in os.walk(folder):
+                    for file in files:
+                        if file.lower().endswith('.pdf'):
+                            filepath = os.path.join(root, file)
+                            try:
+                                mtime = os.path.getmtime(filepath)
+                                if mtime >= cutoff_time:
+                                    recent_files.append(filepath)
+                            except:
+                                pass
+        
+        if recent_files:
+            rumps.notification(APP_NAME, "Processing Started", f"Found {len(recent_files)} recent PDF file(s) to process")
+            self.process_files_list(recent_files)
+        else:
+            rumps.notification(APP_NAME, "No Recent Files", "No PDF files modified in the last 24 hours")
+    
+    def process_files_list(self, filepaths: List[str]):
+        """Process a list of PDF files"""
+        processed_count = 0
+        error_count = 0
+        skipped_count = 0
+        
+        for filepath in filepaths:
+            try:
+                # Validate file exists
+                if not os.path.exists(filepath):
+                    logger.warning(f"File not found: {filepath}")
+                    continue
+                
+                # Check if already processed
+                if hasattr(self.monitor.handler, 'processed_files') and filepath in self.monitor.handler.processed_files:
+                    logger.info(f"Skipping already processed: {filepath}")
+                    skipped_count += 1
+                    continue
+                
+                # Process the file using the handler's process_pdf method
+                self.monitor.handler.process_pdf(filepath, self.handle_progress_update)
+                processed_count += 1
+                
+            except Exception as e:
+                logger.error(f"Error processing {filepath}: {e}")
+                error_count += 1
+                if self.stats:
+                    self.stats.increment_errors(str(e))
+        
+        # Show completion notification
+        message = f"Processed: {processed_count}"
+        if skipped_count > 0:
+            message += f", Skipped: {skipped_count}"
+        if error_count > 0:
+            message += f", Errors: {error_count}"
+        
+        rumps.notification(
+            APP_NAME,
+            "Processing Complete",
+            message
+        )
     
     def quit_app(self, sender):
         """Quit application"""

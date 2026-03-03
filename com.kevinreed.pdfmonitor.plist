@@ -7,18 +7,18 @@
     <key>ProgramArguments</key>
     <array>
         <string>/usr/bin/python3</string>
-        <string>/Users/kevinreed/Library/CloudStorage/OneDrive-Personal/OCR_folder_app/pdf_monitor_app.py</string>
+        <string>/Users/kevinreed/dev/OCR_folder_app/pdf_monitor_app.py</string>
     </array>
     <key>RunAtLoad</key>
     <true/>
     <key>KeepAlive</key>
     <true/>
     <key>StandardOutPath</key>
-    <string>/Users/kevinreed/Library/CloudStorage/OneDrive-Personal/OCR_folder_app/app_output.log</string>
+    <string>/Users/kevinreed/dev/OCR_folder_app/app_output.log</string>
     <key>StandardErrorPath</key>
-    <string>/Users/kevinreed/Library/CloudStorage/OneDrive-Personal/OCR_folder_app/app_error.log</string>
+    <string>/Users/kevinreed/dev/OCR_folder_app/app_error.log</string>
     <key>WorkingDirectory</key>
-    <string>/Users/kevinreed/Library/CloudStorage/OneDrive-Personal/OCR_folder_app</string>
+    <string>/Users/kevinreed/dev/OCR_folder_app</string>
 </dict>
 </plist>
 

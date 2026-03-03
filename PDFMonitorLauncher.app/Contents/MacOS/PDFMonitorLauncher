@@ -1,0 +1,29 @@
+#!/bin/bash
+# PDF Monitor Launcher - Starts the web control panel
+
+APP_DIR="$(cd "$(dirname "$0")/../../.." && pwd)"
+cd "$APP_DIR"
+
+# Check if already running
+if pgrep -f "pdf_monitor_web.py" > /dev/null; then
+    osascript -e 'display dialog "PDF Monitor is already running!" buttons {"Open Control Panel", "OK"} default button 1' 2>/dev/null
+    if [ $? -eq 0 ]; then
+        open "http://127.0.0.1:5000"
+    fi
+    exit 0
+fi
+
+# Start the web interface
+osascript <<EOF
+tell application "Terminal"
+    do script "cd '$APP_DIR' && python3 pdf_monitor_web.py"
+end tell
+EOF
+
+# Wait a moment then open browser
+sleep 3
+open "http://127.0.0.1:5000"
+
+# Show notification
+osascript -e 'display notification "PDF Monitor started! Control panel opening in browser." with title "PDF Monitor"'
+
