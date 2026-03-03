@@ -35,6 +35,6 @@ To stop: `launchctl unload ~/Library/LaunchAgents/com.kevinreed.pdfmonitor.plist
 
 ```bash
 python3 manage_folders.py list
-python3 manage_folders.py add ~/Downloads
+python3 manage_folders.py add /Users/kevinreed/Downloads/OCR
 python3 pdf_monitor.py
 ```

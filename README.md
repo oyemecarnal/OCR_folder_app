@@ -79,7 +79,7 @@ python pdf_monitor.py
 ```
 
 The monitor will:
-- Load the default folder (`/Users/kevinreed/Downloads`) if no folders are configured
+- Load the default folder (`/Users/kevinreed/Downloads/OCR`) if no folders are configured
 - Watch for new PDF files in all configured folders
 - Automatically process PDFs when they appear
 - Log activity to `pdf_monitor.log` and the console

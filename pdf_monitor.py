@@ -362,7 +362,7 @@ def main():
     monitor = PDFMonitor()
     
     # Add default folder if config is empty
-    default_folder = os.path.expanduser('~/Downloads')
+    default_folder = '/Users/kevinreed/Downloads/OCR'
     if not monitor.config_manager.list_folders():
         monitor.config_manager.add_folder(default_folder)
         logger.info(f"Added default folder: {default_folder}")

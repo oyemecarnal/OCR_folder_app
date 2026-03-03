@@ -128,7 +128,7 @@ class PDFMonitorApp(rumps.App):
             
             # Add default folder if needed
             if not self.monitor.config_manager.list_folders():
-                default_folder = os.path.expanduser('~/Downloads')
+                default_folder = '/Users/kevinreed/Downloads/OCR'
                 if os.path.isdir(default_folder):
                     self.monitor.config_manager.add_folder(default_folder)
             
